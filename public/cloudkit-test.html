@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>CloudKit Connectivity Test</title>
+    <script src="https://cdn.apple-cloudkit.com/ck/2/cloudkit.js"></script>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .status {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .info {
+            background: #e0f2fe;
+            color: #075985;
+        }
+
+        pre {
+            background: #f1f5f9;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>CloudKit Connectivity Test</h1>
+
+    <div id="config-status" class="status info">Ready to Test</div>
+
+    <div
+        style="margin-bottom: 2rem; background: #f8fafc; padding: 1.5rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+        <h3 style="margin-top: 0;">Configuration</h3>
+
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Container ID</label>
+            <input type="text" id="container-id" value="iCloud.com.cavos.auth"
+                style="width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 4px;">
+            <small style="color: #64748b;">Must match exactly what is in CloudKit Dashboard (e.g.
+                iCloud.com.example.app)</small>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">API Token</label>
+            <input type="text" id="api-token" value="f8e7845fb872805f090e4a83f22d71bb9653814066810de91087ceec4d4ae40c"
+                style="width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 4px;">
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Environment</label>
+            <select id="environment"
+                style="width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 4px;">
+                <option value="development">Development</option>
+                <option value="production">Production</option>
+            </select>
+        </div>
+
+        <button id="test-config-btn" onclick="performAuth()" style="margin-bottom: 1rem;">Test Configuration</button>
+
+        <div id="apple-sign-in-button"></div>
+        <div id="auth-btn-container">
+            <!-- Manual button removed in favor of CloudKit button -->
+        </div>
+    </div>
+
+    <h3>Logs</h3>
+    <pre id="logs"></pre>
+
+    <script>
+        function log(msg, type = 'info') {
+            const el = document.getElementById('logs');
+            const time = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ef4444' : (type === 'success' ? '#16a34a' : '#334155');
+            el.innerHTML += `<div style="color: ${color}; margin-bottom: 4px;">[${time}] ${msg}</div>`;
+            console.log(msg);
+        }
+
+        function updateStatus(msg, type) {
+            const el = document.getElementById('config-status');
+            el.textContent = msg;
+            el.className = `status ${type}`;
+        }
+
+        async function performAuth() {
+            const containerId = document.getElementById('container-id').value.trim();
+            const apiToken = document.getElementById('api-token').value.trim();
+            const environment = document.getElementById('environment').value;
+
+            document.getElementById('logs').innerHTML = '';
+            log(`Starting test with:`);
+            log(`Container: ${containerId}`);
+            log(`Environment: ${environment}`);
+            log(`Token: ${apiToken.substring(0, 10)}...`);
+
+            try {
+                // Configure CloudKit with native Sign In Button
+                CloudKit.configure({
+                    containers: [{
+                        containerIdentifier: containerId,
+                        apiTokenAuth: {
+                            apiToken: apiToken,
+                            persist: true,
+                            signInButton: {
+                                id: 'apple-sign-in-button',
+                                theme: 'black'
+                            }
+                        },
+                        environment: environment
+                    }]
+                });
+
+                log('CloudKit configured. Waiting for button render...');
+                updateStatus('Connecting...', 'info');
+
+                const container = CloudKit.getDefaultContainer();
+
+                // Listen for auth events
+                container.whenUserSignsIn().then((userIdentity) => {
+                    log('Event: User Signed In!', 'success');
+                    log('Identity: ' + JSON.stringify(userIdentity, null, 2));
+                    updateStatus('Authenticated Successfully', 'success');
+                    verifyDatabase(container);
+                });
+
+                container.whenUserSignsOut().then(() => {
+                    log('Event: User Signed Out', 'info');
+                    updateStatus('Signed Out', 'info');
+                });
+
+                // Initial check
+                log('Checking initial auth status...');
+                const userIdentity = await container.setUpAuth();
+
+                if (userIdentity) {
+                    log('Already authenticated.', 'success');
+                    log('Identity: ' + JSON.stringify(userIdentity, null, 2));
+                    updateStatus('Authenticated Successfully', 'success');
+                    verifyDatabase(container);
+                } else {
+                    log('Not authenticated. Please click the Apple Sign In button above.', 'info');
+                    updateStatus('Waiting for Sign In...', 'info');
+                }
+
+            } catch (error) {
+                log('ERROR: ' + error.message, 'error');
+                if (error.ckErrorCode) log('CloudKit Error Code: ' + error.ckErrorCode, 'error');
+                updateStatus('Failed: ' + error.message, 'error');
+            }
+        }
+
+        async function verifyDatabase(container) {
+            log('Verifying database access...');
+            try {
+                const userInfo = await container.publicCloudDatabase.fetchCurrentUserIdentity();
+                log('Database access confirmed. User Record Name: ' + userInfo.userRecordName, 'success');
+            } catch (err) {
+                log('Database check failed: ' + err.message, 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>
