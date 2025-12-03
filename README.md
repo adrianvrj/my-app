@@ -29,7 +29,7 @@ Before you begin, you need:
 
 ```bash
 git clone <repository-url>
-cd cavos-example-app
+cd my-app
 npm install
 ```
 
