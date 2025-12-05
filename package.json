@@ -10,7 +10,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@cavos/react": "file:cavos-react-0.1.1.tgz",
+    "@cavos/react": "^0.1.4",
     "next": "16.0.3",
     "react": "19.2.0",
     "react-dom": "19.2.0"

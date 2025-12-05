@@ -7,11 +7,13 @@ import Image from 'next/image';
 const TOKEN_ADDRESS = '0x04718f5a0Fc34cC1AF16A1cdee98fFB20C31f5cD61D6Ab07201858f4287c938D';
 
 export default function Home() {
-  const { isAuthenticated, user, address, login, execute, isLoading, cavos, logout } = useCavos();
+  const { isAuthenticated, user, address, login, execute, retryWalletUnlock, isLoading, cavos, logout } = useCavos();
   const [txHash, setTxHash] = useState<string | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [walletUnlockError, setWalletUnlockError] = useState<string | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   const handleApprove = async () => {
     if (!address) return;
@@ -41,6 +43,21 @@ export default function Home() {
       setError(err.message || 'Transaction failed');
     } finally {
       setIsExecuting(false);
+    }
+  };
+
+  const handleRetryWalletUnlock = async () => {
+    setIsRetrying(true);
+    setWalletUnlockError(null);
+
+    try {
+      await retryWalletUnlock();
+      console.log('[App] Wallet unlocked successfully');
+    } catch (err: any) {
+      console.error('[App] Wallet unlock failed:', err);
+      setWalletUnlockError(err.message || 'Failed to unlock wallet');
+    } finally {
+      setIsRetrying(false);
     }
   };
 
@@ -194,21 +211,48 @@ export default function Home() {
         </div>
 
         {/* Wallet Card */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <h2 className="text-sm font-medium text-black/60 mb-2">
-                Wallet Address
-              </h2>
-              <p className="font-mono text-sm text-black break-all">
-                {address}
-              </p>
+        {address ? (
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex-1">
+                <h2 className="text-sm font-medium text-black/60 mb-2">
+                  Wallet Address
+                </h2>
+                <p className="font-mono text-sm text-black break-all">
+                  {address}
+                </p>
+              </div>
+              <span className="ml-4 inline-flex items-center rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700 border border-green-200">
+                Deployed
+              </span>
             </div>
-            <span className="ml-4 inline-flex items-center rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700 border border-green-200">
-              Deployed
-            </span>
           </div>
-        </div>
+        ) : (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 mb-6">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-amber-900 mb-1">
+                  Wallet Not Loaded
+                </h3>
+                <p className="text-sm text-amber-800 mb-4">
+                  {walletUnlockError || 'Your wallet needs to be unlocked with your passkey to continue.'}
+                </p>
+                <button
+                  onClick={handleRetryWalletUnlock}
+                  disabled={isRetrying}
+                  className="px-4 py-2 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  {isRetrying ? 'Unlocking...' : 'Unlock Wallet'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Transaction Card */}
         <div className="bg-white border border-gray-200 rounded-2xl p-6">

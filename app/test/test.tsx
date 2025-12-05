@@ -7,13 +7,60 @@ import Image from 'next/image';
 const TOKEN_ADDRESS = '0x04718f5a0Fc34cC1AF16A1cdee98fFB20C31f5cD61D6Ab07201858f4287c938D';
 
 export default function TestPage() {
-    const { isAuthenticated, user, address, login, execute, isLoading, logout } = useCavos();
+    const { isAuthenticated, user, address, login, execute, signMessage, deleteAccount, isLoading, logout } = useCavos();
     const [spenderAddress, setSpenderAddress] = useState('');
     const [amount, setAmount] = useState('1');
     const [txHash, setTxHash] = useState<string | null>(null);
     const [isExecuting, setIsExecuting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [signature, setSignature] = useState<{ r: string; s: string } | null>(null);
+    const [isSigning, setIsSigning] = useState(false);
+
+    const handleSignMessage = async () => {
+        setIsSigning(true);
+        setError(null);
+        setSignature(null);
+
+        try {
+            const sig = await signMessage('Hello world!');
+            setSignature(sig);
+            console.log('[Test] Message signed:', sig);
+        } catch (err: any) {
+            console.error('[Test] Signing failed:', err);
+            setError(err.message || 'Signing failed');
+        } finally {
+            setIsSigning(false);
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        const confirmed = window.confirm(
+            '⚠️ WARNING: This will permanently delete your account from Auth0 and remove your wallet from the database.\n\nThis action CANNOT be undone.\n\nAre you absolutely sure you want to continue?'
+        );
+
+        if (!confirmed) return;
+
+        // Double confirmation
+        const doubleConfirmed = window.confirm(
+            'This is your last chance to cancel.\n\nClick OK to permanently delete your account.'
+        );
+
+        if (!doubleConfirmed) return;
+
+        setIsExecuting(true);
+        setError(null);
+
+        try {
+            await deleteAccount();
+            console.log('[Test] Account deleted successfully');
+            // User will be logged out automatically by the SDK
+        } catch (err: any) {
+            console.error('[Test] Account deletion failed:', err);
+            setError(err.message || 'Account deletion failed');
+            setIsExecuting(false);
+        }
+    };
 
     const handleApprove = async () => {
         if (!address || !spenderAddress) {
@@ -159,8 +206,15 @@ export default function TestPage() {
                             Home
                         </button>
                         <button
-                            onClick={() => { logout(); setIsMenuOpen(false); }}
+                            onClick={() => { handleDeleteAccount(); setIsMenuOpen(false); }}
                             className="block text-2xl font-medium text-red-600 hover:opacity-70 transition-opacity text-left w-full"
+                            disabled={isExecuting}
+                        >
+                            {isExecuting ? 'Deleting...' : 'Delete Account'}
+                        </button>
+                        <button
+                            onClick={() => { logout(); setIsMenuOpen(false); }}
+                            className="block text-2xl font-medium text-black/60 hover:opacity-70 transition-opacity text-left w-full"
                         >
                             Sign Out
                         </button>
@@ -237,6 +291,21 @@ export default function TestPage() {
                         </div>
 
                         <button
+                            onClick={handleSignMessage}
+                            disabled={isSigning}
+                            className="w-full bg-blue-600 text-white px-6 py-4 rounded-full hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all font-medium"
+                        >
+                            {isSigning ? (
+                                <span className="flex items-center justify-center gap-2">
+                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-r-transparent"></div>
+                                    Signing...
+                                </span>
+                            ) : (
+                                'Sign Message "Hello world!"'
+                            )}
+                        </button>
+
+                        <button
                             onClick={handleApprove}
                             disabled={isExecuting || !spenderAddress}
                             className="w-full bg-black text-white px-6 py-4 rounded-full hover:bg-black/90 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all font-medium"
@@ -277,6 +346,24 @@ export default function TestPage() {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                     </svg>
                                 </a>
+                            </div>
+                        )}
+
+                        {signature && (
+                            <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                                <p className="text-sm font-medium text-blue-800 mb-2">
+                                    Message Signed Successfully
+                                </p>
+                                <div className="space-y-2">
+                                    <div>
+                                        <p className="text-xs font-medium text-blue-700">r:</p>
+                                        <p className="text-xs text-blue-600 font-mono break-all">{signature.r}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-medium text-blue-700">s:</p>
+                                        <p className="text-xs text-blue-600 font-mono break-all">{signature.s}</p>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>

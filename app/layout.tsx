@@ -21,7 +21,7 @@ export default function RootLayout({
   return (
     <CavosProvider
       config={{
-        appId: 'your-app-id-here',
+        appId: process.env.NEXT_PUBLIC_CAVOS_APP_ID || "",
         network: 'sepolia',
       }}
     >
