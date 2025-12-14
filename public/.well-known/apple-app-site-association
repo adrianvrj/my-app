@@ -1,5 +1,17 @@
 {
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "BK55WWJZJ7.xyz.cavos.example",
+        "paths": ["*"]
+      }
+    ]
+  },
   "webcredentials": {
     "apps": ["BK55WWJZJ7.xyz.cavos.example"]
+  },
+  "appclips": {
+    "apps": []
   }
 }
