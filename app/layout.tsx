@@ -23,6 +23,7 @@ export default function RootLayout({
       config={{
         appId: process.env.NEXT_PUBLIC_CAVOS_APP_ID || "",
         network: 'sepolia',
+        enableLogging: true,
       }}
     >
       <html lang="en">

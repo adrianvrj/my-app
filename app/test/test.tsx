@@ -7,7 +7,7 @@ import Image from 'next/image';
 const TOKEN_ADDRESS = '0x04718f5a0Fc34cC1AF16A1cdee98fFB20C31f5cD61D6Ab07201858f4287c938D';
 
 export default function TestPage() {
-    const { isAuthenticated, user, address, login, execute, signMessage, deleteAccount, isLoading, logout } = useCavos();
+    const { isAuthenticated, address, login, register, execute, signMessage, deleteAccount, isLoading, logout } = useCavos();
     const [spenderAddress, setSpenderAddress] = useState('');
     const [amount, setAmount] = useState('1');
     const [txHash, setTxHash] = useState<string | null>(null);
@@ -16,6 +16,8 @@ export default function TestPage() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [signature, setSignature] = useState<{ r: string; s: string } | null>(null);
     const [isSigning, setIsSigning] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
 
     const handleSignMessage = async () => {
         setIsSigning(true);
@@ -26,9 +28,10 @@ export default function TestPage() {
             const sig = await signMessage('Hello world!');
             setSignature(sig);
             console.log('[Test] Message signed:', sig);
-        } catch (err: any) {
-            console.error('[Test] Signing failed:', err);
-            setError(err.message || 'Signing failed');
+        } catch (err) {
+            const error = err as Error;
+            console.error('[Test] Signing failed:', error);
+            setError(error.message || 'Signing failed');
         } finally {
             setIsSigning(false);
         }
@@ -55,9 +58,10 @@ export default function TestPage() {
             await deleteAccount();
             console.log('[Test] Account deleted successfully');
             // User will be logged out automatically by the SDK
-        } catch (err: any) {
-            console.error('[Test] Account deletion failed:', err);
-            setError(err.message || 'Account deletion failed');
+        } catch (err) {
+            const error = err as Error;
+            console.error('[Test] Account deletion failed:', error);
+            setError(error.message || 'Account deletion failed');
             setIsExecuting(false);
         }
     };
@@ -88,9 +92,10 @@ export default function TestPage() {
 
             setTxHash(hash);
             console.log('[Test] Transaction submitted:', hash);
-        } catch (err: any) {
-            console.error('[Test] Transaction failed:', err);
-            setError(err.message || 'Transaction failed');
+        } catch (err) {
+            const error = err as Error;
+            console.error('[Test] Transaction failed:', error);
+            setError(error.message || 'Transaction failed');
         } finally {
             setIsExecuting(false);
         }
@@ -131,19 +136,68 @@ export default function TestPage() {
                             Login to test token approval
                         </p>
 
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <button
-                                onClick={() => login('google')}
-                                className="px-8 py-4 bg-black text-white rounded-full font-medium hover:bg-black/90 transition-all text-lg"
-                            >
-                                Continue with Google
-                            </button>
-                            <button
-                                onClick={() => login('apple')}
-                                className="px-8 py-4 bg-[#f7eded] text-black rounded-full font-medium hover:bg-[#efe5e5] transition-all text-lg"
-                            >
-                                Continue with Apple
-                            </button>
+                        <div className="flex flex-col gap-4 max-w-md mx-auto">
+                            <div className="flex flex-col sm:flex-row gap-4">
+                                <button
+                                    onClick={() => login('google')}
+                                    className="px-8 py-4 bg-black text-white rounded-full font-medium hover:bg-black/90 transition-all text-lg"
+                                >
+                                    Continue with Google
+                                </button>
+                                <button
+                                    onClick={() => login('apple')}
+                                    className="px-8 py-4 bg-[#f7eded] text-black rounded-full font-medium hover:bg-[#efe5e5] transition-all text-lg"
+                                >
+                                    Continue with Apple
+                                </button>
+                            </div>
+
+                            <div className="relative my-4">
+                                <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-gray-300"></div>
+                                </div>
+                                <div className="relative flex justify-center text-sm">
+                                    <span className="px-2 bg-white text-gray-500">Or with email</span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="Email"
+                                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-black focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                                />
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="Password"
+                                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-black focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                                />
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => login('firebase', { email, password })}
+                                        disabled={isLoading || !email || !password}
+                                        className="flex-1 px-6 py-3 bg-gray-900 text-white rounded-full font-medium hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all"
+                                    >
+                                        {isLoading ? 'Loading...' : 'Login'}
+                                    </button>
+                                    <button
+                                        onClick={() => register('firebase', { email, password })}
+                                        disabled={isLoading || !email || !password}
+                                        className="flex-1 px-6 py-3 bg-white text-black border border-gray-300 rounded-full font-medium hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed transition-all"
+                                    >
+                                        {isLoading ? 'Loading...' : 'Register'}
+                                    </button>
+                                </div>
+                                {error && (
+                                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
+                                        <p className="text-sm text-red-700">{error}</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -374,7 +428,7 @@ export default function TestPage() {
                         About This Test
                     </h3>
                     <p className="text-sm text-black/70">
-                        Demonstrates custom transaction parameters. Amount is converted to wei and split for Starknet's uint256 format.
+                        Demonstrates custom transaction parameters. Amount is converted to wei and split for Starknet&apos;s uint256 format.
                     </p>
                 </div>
             </main>
