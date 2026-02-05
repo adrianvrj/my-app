@@ -13,7 +13,7 @@
     "@cavos/react": "^1.0.2",
     "axios": "^1.13.4",
     "firebase": "^12.8.0",
-    "next": "15.1.0",
+    "next": "^16.1.6",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "starknet": "^9.2.1"
