@@ -1,17 +1,22 @@
-'use client'
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { CavosProvider } from "@cavos/react";
+import type { Metadata } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
+import './globals.css';
+import { Providers } from './providers';
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
 });
+
+export const metadata: Metadata = {
+  title: 'Cavos — OAuth Wallet',
+  description: 'Self-custodial Starknet wallet powered by OAuth',
+};
 
 export default function RootLayout({
   children,
@@ -19,21 +24,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <CavosProvider
-      config={{
-        appId: process.env.NEXT_PUBLIC_CAVOS_APP_ID || "",
-        network: 'sepolia',
-        enableLogging: true,
-      }}
-    >
-      <html lang="en">
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
-          {children}
-        </body>
-      </html>
-    </CavosProvider>
-
+    <html lang="en">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
   );
 }

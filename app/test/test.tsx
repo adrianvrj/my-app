@@ -7,7 +7,7 @@ import Image from 'next/image';
 const TOKEN_ADDRESS = '0x04718f5a0Fc34cC1AF16A1cdee98fFB20C31f5cD61D6Ab07201858f4287c938D';
 
 export default function TestPage() {
-    const { isAuthenticated, address, login, register, execute, signMessage, deleteAccount, isLoading, logout } = useCavos();
+    const { isAuthenticated, address, login, register, execute, signMessage, isLoading, logout } = useCavos();
     const [spenderAddress, setSpenderAddress] = useState('');
     const [amount, setAmount] = useState('1');
     const [txHash, setTxHash] = useState<string | null>(null);
@@ -25,7 +25,18 @@ export default function TestPage() {
         setSignature(null);
 
         try {
-            const sig = await signMessage('Hello world!');
+            const sig = await signMessage({
+                types: {
+                    StarkNetDomain: [
+                        { name: 'name', type: 'shortstring' },
+                        { name: 'version', type: 'shortstring' },
+                    ],
+                    Message: [{ name: 'content', type: 'felt' }],
+                },
+                primaryType: 'Message',
+                domain: { name: 'CavosTest', version: '1' },
+                message: { content: '0x48656c6c6f20776f726c6421' }, // "Hello world!"
+            });
             setSignature(sig);
             console.log('[Test] Message signed:', sig);
         } catch (err) {
@@ -55,13 +66,13 @@ export default function TestPage() {
         setError(null);
 
         try {
-            await deleteAccount();
-            console.log('[Test] Account deleted successfully');
-            // User will be logged out automatically by the SDK
+            // deleteAccount no longer available — use logout instead
+            await logout();
+            console.log('[Test] Logged out');
         } catch (err) {
             const error = err as Error;
-            console.error('[Test] Account deletion failed:', error);
-            setError(error.message || 'Account deletion failed');
+            console.error('[Test] Logout failed:', error);
+            setError(error.message || 'Logout failed');
             setIsExecuting(false);
         }
     };
