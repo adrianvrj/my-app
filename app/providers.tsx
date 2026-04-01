@@ -28,6 +28,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         },
         slot: {
           rpcUrl: 'https://api.cartridge.gg/x/cavos/katana',
+          chainId: '0x57505f4341564f53', // WP_CAVOS - the actual internal get_tx_info().chain_id of this Slot
         },
       }}
       modal={{ appName: 'Cavos Demo', theme: 'dark' }}
