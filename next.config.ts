@@ -1,5 +1,6 @@
 const nextConfig = {
   reactStrictMode: false,
+  allowedDevOrigins: ['192.168.1.25'],
   async headers() {
     return [
       {

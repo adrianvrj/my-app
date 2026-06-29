@@ -10,13 +10,21 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@cavos/react": "^1.1.11",
+    "@cavos/kit": "file:../kit/cavos-kit-0.0.16.tgz",
+    "@phosphor-icons/react": "^2.1.10",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
+    "@solana/spl-token": "^0.4.14",
+    "@solana/web3.js": "^1.98.4",
+    "@types/qrcode": "^1.5.6",
+    "@types/three": "^0.185.0",
     "axios": "^1.13.4",
-    "firebase": "^12.8.0",
     "next": "^16.1.6",
+    "qrcode": "^1.5.4",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "starknet": "^9.2.1"
+    "starknet": "^9.2.1",
+    "three": "^0.184.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
