@@ -21,31 +21,45 @@ export const IconCheck = () => <Check size={14} weight="bold" aria-hidden />;
 export const IconCaretDown = () => <CaretDown size={12} weight="bold" aria-hidden />;
 
 // ── Network marks ──────────────────────────────────────────────────────────
-export function NetworkMark({ chain }: { chain: 'starknet' | 'solana' | 'stellar' }) {
-  if (chain === 'stellar') {
+// Official chain logos loaded from a CDN (TrustWallet assets via jsDelivr), with
+// a graceful first-letter fallback if a logo fails to load. Plain <img> so the
+// external CDN works without next/image remote-pattern config.
+const CHAIN_LOGOS: Record<'starknet' | 'solana' | 'stellar', string> = {
+  starknet:
+    'https://cdn.jsdelivr.net/gh/trustwallet/assets@master/blockchains/ethereum/assets/0xCa14007Eff0dB1f8135f4C25B34De49AB0d42766/logo.png',
+  solana: 'https://cdn.jsdelivr.net/gh/trustwallet/assets@master/blockchains/solana/info/logo.png',
+  stellar: 'https://cdn.jsdelivr.net/gh/trustwallet/assets@master/blockchains/stellar/info/logo.png',
+};
+
+export function NetworkMark({
+  chain,
+  size = 20,
+}: {
+  chain: 'starknet' | 'solana' | 'stellar';
+  size?: number;
+}) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
     return (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-        <circle cx="12" cy="12" r="10.5" stroke="currentColor" strokeWidth="1.6" />
-        <path d="M5.5 8.5 18.5 15M18.5 8.5 5.5 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      </svg>
-    );
-  }
-  if (chain === 'solana') {
-    return (
-      <svg width="15" height="13" viewBox="0 0 24 20" fill="none" aria-hidden>
-        <path d="M4 4.2 7 1h13l-3 3.2H4Z" fill="currentColor" />
-        <path d="M4 11.6 7 8.4h13l-3 3.2H4Z" fill="currentColor" />
-        <path d="M20 19 17 15.8H4l3 3.2h13Z" fill="currentColor" />
-      </svg>
+      <span
+        style={{ width: size, height: size }}
+        className="flex shrink-0 items-center justify-center rounded-full bg-surface-raised text-[11px] font-semibold uppercase text-ink-secondary"
+      >
+        {chain.charAt(0)}
+      </span>
     );
   }
   return (
-    <svg width="13" height="15" viewBox="0 0 20 24" fill="none" aria-hidden>
-      <path
-        d="M10 0c.6 5 1.6 7 4.5 9.5C12 11 11 13 10 24 9 13 8 11 5.5 9.5 8.4 7 9.4 5 10 0Z"
-        fill="currentColor"
-      />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={CHAIN_LOGOS[chain]}
+      alt={chain}
+      width={size}
+      height={size}
+      onError={() => setFailed(true)}
+      className="shrink-0 rounded-full"
+      style={{ width: size, height: size }}
+    />
   );
 }
 
