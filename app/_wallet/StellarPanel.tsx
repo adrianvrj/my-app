@@ -1,8 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useCavos } from '@cavos/kit/react';
+import type { CavosStellar } from '@cavos/kit';
 import { formatUnits, parseUnits, shorten, STELLAR_DECIMALS } from './config';
-import type { StellarState } from './useStellar';
 import type { ActivityItem } from './ui';
 import type { TokenEntry } from './TokenList';
 import type { SendToken } from './SendForm';
@@ -20,40 +21,39 @@ export interface StellarWalletData {
   /** Native XLM send via the account's __check_auth-guarded transfer. */
   onSend: (recipient: string, amount: string, symbol: string) => Promise<string>;
   onRefresh: () => void;
-  /** Recovery: generate code + register backup signer. */
-  onSetupRecovery: () => Promise<string>;
-  /** Recovery: recover account with a code. */
-  onRecover: (code: string) => Promise<void>;
 }
 
-export function useStellarWallet(stellar: StellarState): StellarWalletData {
-  const { wallet, address, status, error: connectError } = stellar;
+/** Single-chain Stellar wallet data, read from the Stellar CavosProvider. */
+export function useStellarWallet(): StellarWalletData {
+  const { wallet, walletStatus } = useCavos();
+  const xlmWallet = (wallet?.chain === 'stellar' ? wallet : null) as CavosStellar | null;
+  const address = xlmWallet?.address ?? null;
   const [stroops, setStroops] = useState<bigint | null>(null);
   const [balancesLoading, setBalancesLoading] = useState(false);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
 
   const refreshBalance = useCallback(async () => {
-    if (!wallet) return;
+    if (!xlmWallet) return;
     setBalancesLoading(true);
     try {
-      setStroops(await wallet.balance());
+      setStroops(await xlmWallet.balance());
     } catch {
       /* non-fatal */
     } finally {
       setBalancesLoading(false);
     }
-  }, [wallet]);
+  }, [xlmWallet]);
 
   useEffect(() => {
-    if (status === 'ready') refreshBalance();
-  }, [status, refreshBalance]);
+    if (walletStatus.isReady) refreshBalance();
+  }, [walletStatus.isReady, refreshBalance]);
 
   // ── Native XLM send (device-signed via __check_auth) ──
   const onSend = useCallback(
     async (recipient: string, amount: string, _symbol: string): Promise<string> => {
-      if (!wallet) throw new Error('Stellar wallet not ready yet.');
+      if (!xlmWallet) throw new Error('Stellar wallet not ready yet.');
       const raw = parseUnits(amount || '0', STELLAR_DECIMALS);
-      const hash = await wallet.execute(raw, recipient);
+      const hash = await xlmWallet.execute(raw, recipient);
       setActivity((prev) => [
         {
           id: hash,
@@ -69,54 +69,18 @@ export function useStellarWallet(stellar: StellarState): StellarWalletData {
       refreshBalance();
       return hash;
     },
-    [wallet, refreshBalance],
+    [xlmWallet, refreshBalance],
   );
 
-  // ── Recovery ──
-  const onSetupRecovery = useCallback(async (): Promise<string> => {
-    if (!wallet) throw new Error('Stellar wallet not ready yet.');
-    const { generateRecoveryCode } = await import('@cavos/kit');
-    const code = generateRecoveryCode();
-    await wallet.setupRecovery(code);
-    return code;
-  }, [wallet]);
-
-  const onRecover = useCallback(
-    async (code: string) => {
-      if (!wallet) throw new Error('Stellar wallet not ready yet.');
-      const { CavosStellar } = await import('@cavos/kit');
-      await CavosStellar.recover({
-        code,
-        identity: wallet.identity,
-        network: 'stellar-testnet',
-        appSalt: 'cavos-super-wallet-2',
-      });
-      // After recovery the wallet instance is stale — the page triggers a reconnect.
-    },
-    [wallet],
-  );
-
-  const ready = status === 'ready';
-  const blocked = status === 'needs-device-approval';
-  const statusLabel = connectError
-    ? 'Error'
-    : ready
-      ? 'Ready'
-      : blocked
-        ? 'Needs approval'
-        : 'Connecting';
+  const blocked = walletStatus.needsDeviceApproval;
+  const ready = walletStatus.isReady && !blocked;
+  const statusLabel = blocked ? 'Needs approval' : walletStatus.isReady ? 'Ready' : 'Connecting';
 
   const displayBalance = stroops != null ? formatUnits(stroops, STELLAR_DECIMALS) : '—';
 
   const tokens: TokenEntry[] = [
-    {
-      symbol: 'XLM',
-      name: 'Stellar Lumens',
-      balance: displayBalance,
-      chain: 'stellar' as const,
-    },
+    { symbol: 'XLM', name: 'Stellar Lumens', balance: displayBalance, chain: 'stellar' as const },
   ];
-
   const sendTokens: SendToken[] = [{ symbol: 'XLM', decimals: STELLAR_DECIMALS, displayBalance }];
 
   return {
@@ -131,7 +95,5 @@ export function useStellarWallet(stellar: StellarState): StellarWalletData {
     activity,
     onSend,
     onRefresh: refreshBalance,
-    onSetupRecovery,
-    onRecover,
   };
 }

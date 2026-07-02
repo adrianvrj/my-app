@@ -57,19 +57,24 @@ export function ChainBadge({
 }: {
   chain: 'starknet' | 'solana' | 'stellar';
   network: string;
-  onClick: () => void;
+  /** Optional: when omitted the badge is a static, non-interactive label. */
+  onClick?: () => void;
 }) {
+  const interactive = typeof onClick === 'function';
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-2 rounded-full bg-surface px-3 py-1.5 ring-1 ring-line transition-colors hover:bg-surface-hover"
+      disabled={!interactive}
+      className={`flex items-center gap-2 rounded-full bg-surface px-3 py-1.5 ring-1 ring-line ${
+        interactive ? 'transition-colors hover:bg-surface-hover' : 'cursor-default'
+      }`}
     >
       <span className="h-2 w-2 rounded-full bg-success" />
       <span className="text-[13px] font-medium capitalize text-ink-secondary">
         {chain}
       </span>
       <span className="text-[12px] text-ink-muted">· {network}</span>
-      <IconCaretDown />
+      {interactive && <IconCaretDown />}
     </button>
   );
 }

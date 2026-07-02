@@ -3,10 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { SignOut } from '@phosphor-icons/react';
-import { CavosProvider, useCavos } from '@cavos/kit/react';
-import { modal, starknetConfig } from './config';
-import { useSolana } from './useSolana';
-import { useStellar } from './useStellar';
+import { useCavos } from '@cavos/kit/react';
 import { useStarknetWallet } from './StarknetPanel';
 import { useSolanaWallet } from './SolanaPanel';
 import { useStellarWallet } from './StellarPanel';
@@ -18,7 +15,6 @@ import {
   ContentTabs,
   IconSend,
   IconReceive,
-  NetworkMark,
   Notice,
 } from './ui';
 import { ActionSheet } from './ActionSheet';
@@ -30,14 +26,6 @@ import { PasskeyPanel } from './PasskeyPanel';
 import { shorten } from './config';
 
 type Chain = 'starknet' | 'solana' | 'stellar';
-
-export default function SuperWalletPage() {
-  return (
-    <CavosProvider config={starknetConfig} modal={modal}>
-      <SuperWallet />
-    </CavosProvider>
-  );
-}
 
 function CavosWordmark() {
   return (
@@ -54,77 +42,36 @@ function CavosWordmark() {
   );
 }
 
-function SuperWallet() {
-  const { openModal, isAuthenticated, user, logout } = useCavos();
-  const solana = useSolana(isAuthenticated ? user?.userId : null);
-  const stellar = useStellar(isAuthenticated ? user?.userId : null);
-  const [chain, setChain] = useState<Chain>('starknet');
-  const [sheet, setSheet] = useState<'send' | 'receive' | null>(null);
-  const [tab, setTab] = useState<'tokens' | 'activity'>('tokens');
-  const [chainMenuOpen, setChainMenuOpen] = useState(false);
+/**
+ * Single-chain wallet. Each route mounts its own CavosProvider for one chain and
+ * renders <WalletApp chain="…" />. The three data hooks all read useCavos() and
+ * no-op unless the connected wallet matches their chain, so calling all three
+ * keeps the Rules of Hooks satisfied while only one is live.
+ */
+export function WalletApp({ chain }: { chain: Chain }) {
+  const { openModal, isAuthenticated, logout } = useCavos();
 
   if (!isAuthenticated) {
-    return <SignIn onSignIn={openModal} />;
+    return <SignIn chain={chain} onSignIn={openModal} />;
   }
-
-  return (
-    <WalletView
-      chain={chain}
-      setChain={setChain}
-      solana={solana}
-      stellar={stellar}
-      sheet={sheet}
-      setSheet={setSheet}
-      tab={tab}
-      setTab={setTab}
-      chainMenuOpen={chainMenuOpen}
-      setChainMenuOpen={setChainMenuOpen}
-      onSignOut={logout}
-    />
-  );
+  return <WalletView chain={chain} onSignOut={logout} />;
 }
 
-function WalletView({
-  chain,
-  setChain,
-  solana,
-  stellar,
-  sheet,
-  setSheet,
-  tab,
-  setTab,
-  chainMenuOpen,
-  setChainMenuOpen,
-  onSignOut,
-}: {
-  chain: Chain;
-  setChain: (c: Chain) => void;
-  solana: ReturnType<typeof useSolana>;
-  stellar: ReturnType<typeof useStellar>;
-  sheet: 'send' | 'receive' | null;
-  setSheet: (s: 'send' | 'receive' | null) => void;
-  tab: 'tokens' | 'activity';
-  setTab: (t: 'tokens' | 'activity') => void;
-  chainMenuOpen: boolean;
-  setChainMenuOpen: (b: boolean) => void;
-  onSignOut: () => void;
-}) {
-  // All wallet data hooks — only render the active chain's content
+function WalletView({ chain, onSignOut }: { chain: Chain; onSignOut: () => void }) {
   const starknet = useStarknetWallet();
-  const solanaWallet = useSolanaWallet(solana);
-  const stellarWallet = useStellarWallet(stellar);
+  const solana = useSolanaWallet();
+  const stellar = useStellarWallet();
+  const active = chain === 'starknet' ? starknet : chain === 'solana' ? solana : stellar;
 
-  const active =
-    chain === 'starknet' ? starknet : chain === 'solana' ? solanaWallet : stellarWallet;
+  const [sheet, setSheet] = useState<'send' | 'receive' | null>(null);
+  const [tab, setTab] = useState<'tokens' | 'activity'>('tokens');
 
-  // Primary balance for the hero (first token of the active chain)
   const heroBalance = active.tokens[0]?.balance ?? '—';
   const heroSymbol = active.tokens[0]?.symbol ?? '';
   const address = active.address;
 
   return (
     <main className="relative mx-auto flex min-h-[100dvh] w-full max-w-[520px] flex-col">
-      {/* Accent glow backdrop */}
       <div
         aria-hidden
         className="pointer-events-none absolute -top-32 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-accent/20 blur-[100px]"
@@ -134,41 +81,7 @@ function WalletView({
       <header className="relative flex items-center justify-between px-5 pt-6 pb-3">
         <CavosWordmark />
         <div className="flex items-center gap-2">
-          {/* Chain selector */}
-          <div className="relative">
-            <ChainBadge
-              chain={chain}
-              network={active.network}
-              onClick={() => setChainMenuOpen(!chainMenuOpen)}
-            />
-            {chainMenuOpen && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setChainMenuOpen(false)} />
-                <div className="absolute right-0 top-full z-20 mt-2 w-44 overflow-hidden rounded-xl bg-surface py-1 ring-1 ring-line animate-fade-in">
-                  {(['starknet', 'solana', 'stellar'] as Chain[]).map((c) => (
-                    <button
-                      key={c}
-                      onClick={() => {
-                        setChain(c);
-                        setChainMenuOpen(false);
-                      }}
-                      className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-[14px] font-medium transition-colors hover:bg-surface-hover ${
-                        chain === c ? 'text-accent' : 'text-ink-secondary'
-                      }`}
-                    >
-                      <NetworkMark chain={c} />
-                      <span className="capitalize">{c}</span>
-                      {chain === c && (
-                        <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Sign out */}
+          <ChainBadge chain={chain} network={active.network} />
           <button
             onClick={onSignOut}
             aria-label="Sign out"
@@ -179,8 +92,7 @@ function WalletView({
         </div>
       </header>
 
-      {/* Balance hero — NO CARD, directly on base */}
-      {/* Balance hero — NO CARD, centered, directly on base */}
+      {/* Balance hero */}
       <section className="relative flex flex-col items-center px-5 pt-10 pb-7 animate-balance-in">
         <p className="text-[13px] font-medium uppercase tracking-[0.08em] text-ink-muted">
           Total balance
@@ -203,14 +115,14 @@ function WalletView({
         </div>
       </section>
 
-      {/* Action circles — always visible */}
+      {/* Actions */}
       <section className="relative flex items-center justify-center gap-12 px-5 pb-9">
         <ActionButton primary icon={<IconSend />} label="Send" onClick={() => setSheet('send')} />
         <ActionButton icon={<IconReceive />} label="Receive" onClick={() => setSheet('receive')} />
       </section>
 
-      {/* Passkey device-approvals (2FA-style step-up), across all 3 chains */}
-      <PasskeyPanel solana={solana.wallet} stellar={stellar.wallet} />
+      {/* Passkey device-approvals (single-chain) */}
+      <PasskeyPanel />
 
       {/* Content tabs */}
       <section className="relative flex-1 px-5 pb-8">
@@ -267,14 +179,12 @@ function WalletView({
   );
 }
 
-function SignIn({ onSignIn }: { onSignIn: () => void }) {
+function SignIn({ chain, onSignIn }: { chain: Chain; onSignIn: () => void }) {
+  const label = chain.charAt(0).toUpperCase() + chain.slice(1);
   return (
     <main className="relative flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-hidden px-5">
-      {/* Cavos silk orb — brand 3D backdrop, adapted to dark */}
       <WalletOrb />
-
       <div className="relative z-10 flex w-full max-w-[440px] flex-col items-center gap-8 animate-balance-in">
-        {/* Logo */}
         <div className="flex items-center gap-2.5">
           <Image
             src="/CavosLogo.png"
@@ -285,22 +195,17 @@ function SignIn({ onSignIn }: { onSignIn: () => void }) {
             className="brightness-0 invert"
           />
         </div>
-
-        {/* Headline */}
         <div className="flex flex-col items-center gap-3 text-center">
           <h1 className="text-[32px] font-semibold leading-[1.08] tracking-[-0.03em] text-ink">
-            Your wallet, on every chain.
+            Your {label} wallet.
           </h1>
           <p className="max-w-[340px] text-[15px] leading-relaxed text-ink-secondary">
-            One sign-in provisions a device-bound account on Starknet, Solana and Stellar. Gasless, no seed phrases, no extensions.
+            One sign-in provisions a device-bound account on {label}. Gasless, no seed phrases, no extensions.
           </p>
         </div>
-
-        {/* CTA */}
         <Button onClick={onSignIn} variant="primary" className="w-full max-w-[340px] py-3.5 text-[15px]">
           Sign in
         </Button>
-
         <p className="text-center text-[12px] text-ink-muted">
           Secured by a silent device key. You hold the keys, not us.
         </p>

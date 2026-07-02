@@ -28,7 +28,7 @@ export const starknetConfig: CavosConfig = {
   appId: APP_ID,
   chain: 'starknet',
   network: 'testnet', // → sepolia
-  appSalt: 'cavos-super-wallet-2',
+  appSalt: 'cavos-super-wallet-4',
   paymasterApiKey: PAYMASTER_API_KEY,
   rpcUrl: STARKNET_RPC_URL,
 };
@@ -43,7 +43,7 @@ export const solanaConfig: CavosConfig = {
   appId: APP_ID,
   chain: 'solana',
   network: 'testnet', // → solana-devnet
-  appSalt: 'cavos-super-wallet-2',
+  appSalt: 'cavos-super-wallet-4',
   // Gasless via the Cavos relayer (auto-configured from appId) — no paymaster key.
 };
 
@@ -58,7 +58,7 @@ export const stellarConfig: CavosConfig = {
   appId: APP_ID,
   chain: 'stellar',
   network: 'testnet', // → stellar-testnet
-  appSalt: 'cavos-super-wallet-2',
+  appSalt: 'cavos-super-wallet-4',
   rpcUrl: STELLAR_RPC_URL,
   // Gasless via the Cavos relayer (auto-configured from appId) — no paymaster key.
 };
