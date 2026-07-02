@@ -150,7 +150,7 @@ export function useSolanaWallet(solana: SolanaState): SolanaWalletData {
         code,
         identity,
         network: 'solana-devnet',
-        appSalt: 'cavos-super-wallet',
+        appSalt: 'cavos-super-wallet-2',
       });
       // After recovery, the wallet instance is stale — a reconnect is needed.
       // The caller (wallet page) should trigger a full reconnect.

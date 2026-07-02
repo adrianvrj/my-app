@@ -123,7 +123,7 @@ export default function ApproveDevicePage() {
   }
 
   // Use the SAME config the wallet (/_wallet) uses — it has the correct
-  // appSalt ('cavos-super-wallet') that this wallet was created under, so the
+  // appSalt ('cavos-super-wallet-2') that this wallet was created under, so the
   // approving device is recognized as an authorized signer. We deliberately do
   // NOT use the `app_salt` from the backend (that's a derived hex that doesn't
   // match the literal string the SDK derived the address with).

@@ -1,6 +1,6 @@
 const nextConfig = {
   reactStrictMode: false,
-  allowedDevOrigins: ['192.168.1.25'],
+  allowedDevOrigins: ['192.168.1.22', 'visitors-architect-tuner-brandon.trycloudflare.com'],
   async headers() {
     return [
       {

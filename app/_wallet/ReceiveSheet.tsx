@@ -9,7 +9,7 @@ export function ReceiveSheet({
   network,
 }: {
   address: string;
-  chain: 'starknet' | 'solana';
+  chain: 'starknet' | 'solana' | 'stellar';
   network: string;
 }) {
   return (

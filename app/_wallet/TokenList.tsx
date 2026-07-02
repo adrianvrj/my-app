@@ -8,7 +8,7 @@ export interface TokenEntry {
   name: string;
   /** Human-formatted balance string (e.g. "1,234.56"). */
   balance: string;
-  chain: 'starknet' | 'solana';
+  chain: 'starknet' | 'solana' | 'stellar';
 }
 
 export function TokenList({

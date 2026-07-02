@@ -6,8 +6,10 @@ import { SignOut } from '@phosphor-icons/react';
 import { CavosProvider, useCavos } from '@cavos/kit/react';
 import { modal, starknetConfig } from './config';
 import { useSolana } from './useSolana';
+import { useStellar } from './useStellar';
 import { useStarknetWallet } from './StarknetPanel';
 import { useSolanaWallet } from './SolanaPanel';
+import { useStellarWallet } from './StellarPanel';
 import {
   Activity,
   ActionButton,
@@ -24,9 +26,10 @@ import { SendForm } from './SendForm';
 import { ReceiveSheet } from './ReceiveSheet';
 import { TokenList } from './TokenList';
 import { WalletOrb } from './WalletOrb';
+import { PasskeyPanel } from './PasskeyPanel';
 import { shorten } from './config';
 
-type Chain = 'starknet' | 'solana';
+type Chain = 'starknet' | 'solana' | 'stellar';
 
 export default function SuperWalletPage() {
   return (
@@ -54,6 +57,7 @@ function CavosWordmark() {
 function SuperWallet() {
   const { openModal, isAuthenticated, user, logout } = useCavos();
   const solana = useSolana(isAuthenticated ? user?.userId : null);
+  const stellar = useStellar(isAuthenticated ? user?.userId : null);
   const [chain, setChain] = useState<Chain>('starknet');
   const [sheet, setSheet] = useState<'send' | 'receive' | null>(null);
   const [tab, setTab] = useState<'tokens' | 'activity'>('tokens');
@@ -68,6 +72,7 @@ function SuperWallet() {
       chain={chain}
       setChain={setChain}
       solana={solana}
+      stellar={stellar}
       sheet={sheet}
       setSheet={setSheet}
       tab={tab}
@@ -83,6 +88,7 @@ function WalletView({
   chain,
   setChain,
   solana,
+  stellar,
   sheet,
   setSheet,
   tab,
@@ -94,6 +100,7 @@ function WalletView({
   chain: Chain;
   setChain: (c: Chain) => void;
   solana: ReturnType<typeof useSolana>;
+  stellar: ReturnType<typeof useStellar>;
   sheet: 'send' | 'receive' | null;
   setSheet: (s: 'send' | 'receive' | null) => void;
   tab: 'tokens' | 'activity';
@@ -102,11 +109,13 @@ function WalletView({
   setChainMenuOpen: (b: boolean) => void;
   onSignOut: () => void;
 }) {
-  // Both wallet data hooks — only render the active chain's content
+  // All wallet data hooks — only render the active chain's content
   const starknet = useStarknetWallet();
   const solanaWallet = useSolanaWallet(solana);
+  const stellarWallet = useStellarWallet(stellar);
 
-  const active = chain === 'starknet' ? starknet : solanaWallet;
+  const active =
+    chain === 'starknet' ? starknet : chain === 'solana' ? solanaWallet : stellarWallet;
 
   // Primary balance for the hero (first token of the active chain)
   const heroBalance = active.tokens[0]?.balance ?? '—';
@@ -136,7 +145,7 @@ function WalletView({
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setChainMenuOpen(false)} />
                 <div className="absolute right-0 top-full z-20 mt-2 w-44 overflow-hidden rounded-xl bg-surface py-1 ring-1 ring-line animate-fade-in">
-                  {(['starknet', 'solana'] as Chain[]).map((c) => (
+                  {(['starknet', 'solana', 'stellar'] as Chain[]).map((c) => (
                     <button
                       key={c}
                       onClick={() => {
@@ -200,6 +209,9 @@ function WalletView({
         <ActionButton icon={<IconReceive />} label="Receive" onClick={() => setSheet('receive')} />
       </section>
 
+      {/* Passkey device-approvals (2FA-style step-up), across all 3 chains */}
+      <PasskeyPanel solana={solana.wallet} stellar={stellar.wallet} />
+
       {/* Content tabs */}
       <section className="relative flex-1 px-5 pb-8">
         <ContentTabs
@@ -241,7 +253,9 @@ function WalletView({
               busy={false}
               disabled={!active.ready}
               recipientLabel={`Recipient (${chain})`}
-              recipientPlaceholder={chain === 'starknet' ? '0x…' : 'Public key'}
+              recipientPlaceholder={
+                chain === 'starknet' ? '0x…' : chain === 'stellar' ? 'G… address' : 'Public key'
+              }
             />
           </>
         )}
@@ -278,7 +292,7 @@ function SignIn({ onSignIn }: { onSignIn: () => void }) {
             Your wallet, on every chain.
           </h1>
           <p className="max-w-[340px] text-[15px] leading-relaxed text-ink-secondary">
-            One sign-in provisions a device-bound account on Starknet and Solana. Gasless, no seed phrases, no extensions.
+            One sign-in provisions a device-bound account on Starknet, Solana and Stellar. Gasless, no seed phrases, no extensions.
           </p>
         </div>
 

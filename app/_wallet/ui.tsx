@@ -21,7 +21,15 @@ export const IconCheck = () => <Check size={14} weight="bold" aria-hidden />;
 export const IconCaretDown = () => <CaretDown size={12} weight="bold" aria-hidden />;
 
 // ── Network marks ──────────────────────────────────────────────────────────
-export function NetworkMark({ chain }: { chain: 'starknet' | 'solana' }) {
+export function NetworkMark({ chain }: { chain: 'starknet' | 'solana' | 'stellar' }) {
+  if (chain === 'stellar') {
+    return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <circle cx="12" cy="12" r="10.5" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M5.5 8.5 18.5 15M18.5 8.5 5.5 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    );
+  }
   if (chain === 'solana') {
     return (
       <svg width="15" height="13" viewBox="0 0 24 20" fill="none" aria-hidden>
@@ -47,7 +55,7 @@ export function ChainBadge({
   network,
   onClick,
 }: {
-  chain: 'starknet' | 'solana';
+  chain: 'starknet' | 'solana' | 'stellar';
   network: string;
   onClick: () => void;
 }) {
