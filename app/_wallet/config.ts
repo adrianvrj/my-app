@@ -44,6 +44,7 @@ export const solanaConfig: CavosConfig = {
   chain: 'solana',
   network: 'testnet', // → solana-devnet
   appSalt: 'cavos-super-wallet-5',
+  rpcUrl: SOLANA_RPC_URL, // your provider RPC (Alchemy/Helius); default public devnet fails from the browser
   // Gasless via the Cavos relayer (auto-configured from appId) — no paymaster key.
 };
 
