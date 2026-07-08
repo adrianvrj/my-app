@@ -65,6 +65,8 @@ function WalletView({ chain, onSignOut }: { chain: Chain; onSignOut: () => void 
 
   const [sheet, setSheet] = useState<'send' | 'receive' | null>(null);
   const [tab, setTab] = useState<'tokens' | 'activity'>('tokens');
+  const [selfFundedBusy, setSelfFundedBusy] = useState(false);
+  const [selfFundedMsg, setSelfFundedMsg] = useState<{ ok: boolean; text: string; href?: string } | null>(null);
 
   const heroBalance = active.tokens[0]?.balance ?? '—';
   const heroSymbol = active.tokens[0]?.symbol ?? '';
@@ -123,6 +125,69 @@ function WalletView({ chain, onSignOut }: { chain: Chain; onSignOut: () => void 
 
       {/* Passkey device-approvals (single-chain) */}
       <PasskeyPanel />
+
+      {/* Self-funded signature probe (Stellar only): sends 1 stroop without the
+          relayer to verify the device-unlocked control key signs end-to-end. */}
+      {chain === 'stellar' && (
+        <section className="px-5 pb-4">
+          <div className="rounded-2xl bg-surface p-4 ring-1 ring-line">
+            <p className="text-[13px] font-medium text-ink-secondary">
+              Self-funded signature test
+            </p>
+            <p className="mt-1 text-[12px] leading-snug text-ink-muted">
+              Sends 1 stroop of XLM to yourself with <strong>no relayer</strong> — the
+              account pays its own fee and the device-unlocked control key signs.
+              For verifying the signature path only.
+            </p>
+            <div className="mt-3 flex items-center gap-3">
+              <Button
+                variant="secondary"
+                disabled={!active.ready || selfFundedBusy}
+                onClick={async () => {
+                  setSelfFundedBusy(true);
+                  setSelfFundedMsg(null);
+                  try {
+                    const hash = await stellar.onSendSelfFunded();
+                    setSelfFundedMsg({
+                      ok: true,
+                      text: `Signed without relayer — tx ${shorten(hash)}`,
+                      href: `https://stellar.expert/explorer/testnet/tx/${hash}`,
+                    });
+                  } catch (e) {
+                    setSelfFundedMsg({
+                      ok: false,
+                      text: e instanceof Error ? e.message : 'Self-funded send failed.',
+                    });
+                  } finally {
+                    setSelfFundedBusy(false);
+                  }
+                }}
+              >
+                {selfFundedBusy ? 'Signing…' : 'Send 1 stroop (no relayer)'}
+              </Button>
+            </div>
+            {selfFundedMsg && (
+              <div className="mt-3">
+                <Notice tone={selfFundedMsg.ok ? 'info' : 'error'}>
+                  <span className="flex flex-wrap items-center gap-2">
+                    {selfFundedMsg.text}
+                    {selfFundedMsg.href && (
+                      <a
+                        href={selfFundedMsg.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-medium underline underline-offset-2"
+                      >
+                        View on explorer ↗
+                      </a>
+                    )}
+                  </span>
+                </Notice>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Content tabs */}
       <section className="relative flex-1 px-5 pb-8">

@@ -32,13 +32,18 @@ export interface StarknetWalletData {
 }
 
 export function useStarknetWallet(): StarknetWalletData {
-  const { address, walletStatus, execute } = useCavos();
+  const { address, chain, walletStatus, execute } = useCavos();
+  const isStarknet = chain === 'starknet';
   const [balances, setBalances] = useState<Balances>({});
   const [balancesLoading, setBalancesLoading] = useState(false);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
 
   const refreshBalances = useCallback(async () => {
-    if (!address) return;
+    // Guard: this hook is instantiated on every page, but its Starknet RPC
+    // calls (balanceOf on Sepolia token addresses) are only valid when the
+    // active provider is Starknet. On the Solana/Stellar pages `address` is a
+    // non-Starknet address, which balanceOf rejects with "Input too long".
+    if (!address || !isStarknet) return;
     setBalancesLoading(true);
     try {
       const next: Balances = {};
@@ -59,11 +64,11 @@ export function useStarknetWallet(): StarknetWalletData {
     } finally {
       setBalancesLoading(false);
     }
-  }, [address]);
+  }, [address, isStarknet]);
 
   useEffect(() => {
-    if (address) refreshBalances();
-  }, [address, refreshBalances]);
+    if (address && isStarknet) refreshBalances();
+  }, [address, isStarknet, refreshBalances]);
 
   const u256Calldata = (raw: bigint) => {
     const MASK = (BigInt(1) << BigInt(128)) - BigInt(1);

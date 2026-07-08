@@ -20,6 +20,14 @@ export interface StellarWalletData {
   activity: ActivityItem[];
   /** Native XLM send via the account's __check_auth-guarded transfer. */
   onSend: (recipient: string, amount: string, symbol: string) => Promise<string>;
+  /**
+   * Self-funded probe (NO relayer): reconnects this identity in self-funded mode
+   * (no `appId` → no relayer) and submits a 1-stroop payment signed silently by the
+   * device-unlocked control key, paid for by the account itself. Use this to verify
+   * the device-signature path end-to-end without the relayer. The account must
+   * already exist (created earlier via the relayer). Returns the tx hash.
+   */
+  onSendSelfFunded: () => Promise<string>;
   onRefresh: () => void;
 }
 
@@ -78,6 +86,33 @@ export function useStellarWallet(): StellarWalletData {
 
   const displayBalance = stroops != null ? formatUnits(stroops, STELLAR_DECIMALS) : '—';
 
+  // ── Self-funded probe (NO relayer): proves the device signature works without
+  //    the relayer. Uses the per-execute `{ sponsored: false }` flag so the same
+  //    connected wallet submits directly — the control key signs, the account
+  //    pays its own (tiny) fee from its XLM balance. No reconnect, no separate
+  //    identity. The account must hold at least the fee + base reserve.
+  const onSendSelfFunded = useCallback(async (): Promise<string> => {
+    if (!xlmWallet) throw new Error('Stellar wallet not ready yet.');
+    if (!address) throw new Error('Stellar address not resolved yet.');
+    // 1 stroop back to self — minimal payload, just to exercise the signature.
+    const oneStroop = BigInt(1);
+    const hash = await xlmWallet.execute(oneStroop, address, { sponsored: false });
+    setActivity((prev) => [
+      {
+        id: hash,
+        kind: 'send',
+        amount: formatUnits(oneStroop, STELLAR_DECIMALS),
+        symbol: 'XLM',
+        to: shorten(address),
+        href: `https://stellar.expert/explorer/testnet/tx/${hash}`,
+        ts: Date.now(),
+      },
+      ...prev,
+    ]);
+    refreshBalance();
+    return hash;
+  }, [xlmWallet, address, refreshBalance]);
+
   const tokens: TokenEntry[] = [
     { symbol: 'XLM', name: 'Stellar Lumens', balance: displayBalance, chain: 'stellar' as const },
   ];
@@ -94,6 +129,7 @@ export function useStellarWallet(): StellarWalletData {
     balancesLoading,
     activity,
     onSend,
+    onSendSelfFunded,
     onRefresh: refreshBalance,
   };
 }
