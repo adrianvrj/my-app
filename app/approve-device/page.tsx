@@ -8,7 +8,7 @@ import { starknetConfig } from '../_wallet/config';
 // Cavos backend base URL — used by HttpRecoveryClient to confirm the addition.
 const BACKEND_URL = process.env.NEXT_PUBLIC_CAVOS_AUTH_BACKEND_URL || 'https://cavos.xyz';
 
-const modal: CavosModalConfig = { appName: 'Cavos', theme: 'dark', emailMode: 'otp' };
+const modal: CavosModalConfig = { appName: 'Cavos', theme: 'dark', emailMode: 'otp', secureStep: 'off' };
 
 const btn: React.CSSProperties = {
   padding: '12px 18px', borderRadius: 999, border: '1px solid #000',

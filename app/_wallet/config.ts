@@ -68,6 +68,7 @@ export const modal: CavosModalConfig = {
   appName: 'Cavos Super Wallet',
   theme: 'light',
   emailMode: 'otp',
+  secureStep: 'off',
 };
 
 // ── Shared formatting helpers ───────────────────────────────────────────────
