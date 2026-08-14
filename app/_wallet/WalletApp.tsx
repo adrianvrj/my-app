@@ -22,7 +22,7 @@ import { SendForm } from './SendForm';
 import { ReceiveSheet } from './ReceiveSheet';
 import { TokenList } from './TokenList';
 import { WalletOrb } from './WalletOrb';
-import { PasskeyPanel } from './PasskeyPanel';
+import { SocialRecoveryPanel } from './SocialRecoveryPanel';
 import { shorten } from './config';
 
 type Chain = 'starknet' | 'solana' | 'stellar';
@@ -123,8 +123,8 @@ function WalletView({ chain, onSignOut }: { chain: Chain; onSignOut: () => void 
         <ActionButton icon={<IconReceive />} label="Receive" onClick={() => setSheet('receive')} />
       </section>
 
-      {/* Passkey device-approvals (single-chain) */}
-      <PasskeyPanel />
+      {/* Policy-driven recovery. The environment exposes one provider only. */}
+      <SocialRecoveryPanel />
 
       {/* Self-funded signature probe (Stellar only): sends 1 stroop without the
           relayer to verify the device-unlocked control key signs end-to-end. */}

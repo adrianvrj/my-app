@@ -1,6 +1,9 @@
 const nextConfig = {
   reactStrictMode: false,
-  allowedDevOrigins: ['assumption-dirt-facts-rica.trycloudflare.com'],
+  allowedDevOrigins: [
+    '127.0.0.1',
+    '*.trycloudflare.com',
+  ],
   async headers() {
     return [
       {

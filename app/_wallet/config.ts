@@ -6,6 +6,8 @@ import type { CavosConfig, CavosModalConfig } from '@cavos/kit/react';
 
 const APP_ID = process.env.NEXT_PUBLIC_CAVOS_APP_ID || '';
 const PAYMASTER_API_KEY = process.env.NEXT_PUBLIC_CAVOS_PAYMASTER_API_KEY || '';
+const CAVOS_ENVIRONMENT =
+  process.env.NEXT_PUBLIC_CAVOS_ENVIRONMENT === 'production' ? 'production' : 'development';
 
 // ── Starknet (Sepolia) ──────────────────────────────────────────────────────
 export const STARKNET_RPC_URL = 'https://api.cartridge.gg/x/starknet/sepolia';
@@ -26,11 +28,13 @@ export const STARKNET_TOKENS = [
 
 export const starknetConfig: CavosConfig = {
   appId: APP_ID,
+  environment: CAVOS_ENVIRONMENT,
   chain: 'starknet',
   network: 'testnet', // → sepolia
-  appSalt: 'cavos-super-wallet-5',
+  appSalt: 'cavos-super-wallet-nitro-2',
   paymasterApiKey: PAYMASTER_API_KEY,
   rpcUrl: STARKNET_RPC_URL,
+  socialRecovery: true,
 };
 
 // ── Solana (Devnet) ─────────────────────────────────────────────────────────
@@ -41,10 +45,12 @@ export const LAMPORTS_PER_SOL = 1_000_000_000;
 
 export const solanaConfig: CavosConfig = {
   appId: APP_ID,
+  environment: CAVOS_ENVIRONMENT,
   chain: 'solana',
   network: 'testnet', // → solana-devnet
-  appSalt: 'cavos-super-wallet-5',
+  appSalt: 'cavos-super-wallet-nitro-2',
   rpcUrl: SOLANA_RPC_URL, // your provider RPC (Alchemy/Helius); default public devnet fails from the browser
+  socialRecovery: true,
   // Gasless via the Cavos relayer (auto-configured from appId) — no paymaster key.
 };
 
@@ -57,17 +63,19 @@ export const STELLAR_DECIMALS = 7;
 
 export const stellarConfig: CavosConfig = {
   appId: APP_ID,
+  environment: CAVOS_ENVIRONMENT,
   chain: 'stellar',
   network: 'testnet', // → stellar-testnet
-  appSalt: 'cavos-super-wallet-5',
+  appSalt: 'cavos-super-wallet-nitro-2',
   rpcUrl: STELLAR_RPC_URL,
+  socialRecovery: true,
   // Gasless via the Cavos relayer (auto-configured from appId) — no paymaster key.
 };
 
 export const modal: CavosModalConfig = {
   appName: 'Cavos Super Wallet',
   theme: 'light',
-  emailMode: 'otp',
+  providers: ['google'],
   secureStep: 'off',
 };
 
